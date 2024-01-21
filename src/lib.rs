@@ -1,31 +1,49 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, Data, DeriveInput, Fields};
+use syn::{parse_macro_input, AttributeArgs, Data, DeriveInput, Fields, Meta, NestedMeta};
 
 #[proc_macro_attribute]
-pub fn trait_var(_attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn trait_var(attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
-    trait_var_impl(input)
-}
+    let attr_args = parse_macro_input!(attr as AttributeArgs);
 
-fn trait_var_impl(input: DeriveInput) -> TokenStream {
-    // let name = &input.ident;
+    let attribute_name = match &attr_args[0] {
+        NestedMeta::Meta(Meta::Path(path)) => path.get_ident().unwrap().to_string(),
+        _ => panic!("Expected a single identifier for the attribute"),
+    };
+
     let expanded = quote! {
-        trait_variable! { // this is the declarative macro exported from crate `trait_variable`
+        trait_enhance! {
+            #[trait_enhance(#attribute_name)]
             #input
         }
     };
 
-    match input.data {
-        Data::Struct(data_struct) => match data_struct.fields {
-            Fields::Named(_) | Fields::Unnamed(_) | Fields::Unit => expanded.into(),
-        },
-        _ => syn::Error::new_spanned(input, "Expected a struct")
-            .to_compile_error()
-            .into(),
-    }
+    expanded.into()
 }
+
+// bak code
+
+// #[proc_macro_attribute]
+// pub fn trait_var(attr: TokenStream, item: TokenStream) -> TokenStream {
+//     let input = parse_macro_input!(item as DeriveInput);
+//      // let name = &input.ident;
+//      let expanded = quote! {
+//         trait_variable! { // this is the declarative macro exported from crate `trait_variable`
+//             #input
+//         }
+//     };
+
+//     match input.data {
+//         Data::Struct(data_struct) => match data_struct.fields {
+//             Fields::Named(_) | Fields::Unnamed(_) | Fields::Unit => expanded.into(),
+//         },
+//         _ => syn::Error::new_spanned(input, "Expected a struct")
+//             .to_compile_error()
+//             .into(),
+//     }
+// }
 
 // #[proc_macro_attribute]
 // pub fn trait_var(attr: TokenStream, item: TokenStream) -> TokenStream {
