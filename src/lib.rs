@@ -1,10 +1,7 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{
-    parse::Parse, parse::ParseStream, parse_macro_input, AttributeArgs, DeriveInput, Meta,
-    NestedMeta,
-};
+use syn::{parse_macro_input, DeriveInput, parse::Parse, parse::ParseStream, AttributeArgs, Meta, NestedMeta};
 
 #[proc_macro_attribute]
 pub fn trait_var(attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -18,7 +15,7 @@ pub fn trait_var(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let expanded = quote! {
         trait_enhance! {
-            #[trait_enhance(#attribute_name)]
+            #[trait_enhance(#(#attribute_name))]
             #input
         }
     };
