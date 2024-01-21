@@ -1,17 +1,16 @@
 #[cfg(test)]
 mod tests {
     use trait_variable_macros::trait_var;
-
-    macro_rules! add_print {
+    macro_rules! trait_variable {
         (pub struct $struct_name:ident {
             $($body:tt)*
         }) => {
-            add_print!(@impl pub struct $struct_name { $($body)* });
+            trait_variable!(@impl pub struct $struct_name { $($body)* });
         };
         (struct $struct_name:ident {
             $($body:tt)*
         }) => {
-            add_print!(@impl struct $struct_name { $($body)* });
+            trait_variable!(@impl struct $struct_name { $($body)* });
         };
         //
         (@impl $vis:vis struct $struct_name:ident {
@@ -20,8 +19,7 @@ mod tests {
         }) => {
             paste::paste! {
                 $vis struct $struct_name {
-                    // parents: Option<Vec<NodeEnum>>, // 父节点列表，有些节点不需要父节点，如“Variable”, 所以用Option
-                    bad: i32,
+                    customized_field: i32,
                     // 以下是自定义的字段
                     $($user_field_vis $user_field_name : $user_field_type,)*
                 }
@@ -41,8 +39,11 @@ mod tests {
     }
 
     #[test]
-    fn another_test_procedure_macro_syntax() {
-        let s = StructName { prop: 4, bad: 5 };
+    fn test_procedure_macro_syntax() {
+        let s = StructName {
+            prop: 4,
+            customized_field: 5,
+        };
         s.print();
     }
 }

@@ -1,10 +1,7 @@
 extern crate proc_macro;
-
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, Data, DeriveInput, Fields};
-
-// #[macro_export]
 
 #[proc_macro_attribute]
 pub fn trait_var(_attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -15,7 +12,7 @@ pub fn trait_var(_attr: TokenStream, item: TokenStream) -> TokenStream {
 fn trait_var_impl(input: DeriveInput) -> TokenStream {
     // let name = &input.ident;
     let expanded = quote! {
-        add_print! { // this is the declarative macro exported from crate `trait_variable`
+        trait_variable! { // this is the declarative macro exported from crate `trait_variable`
             #input
         }
     };
