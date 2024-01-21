@@ -59,30 +59,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
- "trait_variable",
-]
-
-[[package]]
-name = "trait-variable-macros"
-version = "0.1.1"
-source = "git+https://github.com/dbsxdbsx/trait_variable_macros.git#50f3fa1614a568fbfe997542b4888c16e7dc91ff"
-dependencies = [
- "lazy_static",
- "once_cell",
- "paste",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "trait_variable"
-version = "0.2.0"
-source = "git+https://github.com/dbsxdbsx/trait_variable.git#db63e8c591a0d334e4b626a21caa9d0785134d70"
-dependencies = [
- "paste",
- "quote",
- "trait-variable-macros 0.1.1 (git+https://github.com/dbsxdbsx/trait_variable_macros.git)",
 ]
 
 [[package]]

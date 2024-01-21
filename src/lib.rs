@@ -14,8 +14,8 @@ pub fn trait_var(attr: TokenStream, item: TokenStream) -> TokenStream {
     };
 
     let expanded = quote! {
-        trait_variable! {
-            #[trait_variable(#attribute_name)]
+        trait_enhance! { // TODO: change the name
+            #[trait_enhance(#attribute_name)]
             #input
         }
     };
