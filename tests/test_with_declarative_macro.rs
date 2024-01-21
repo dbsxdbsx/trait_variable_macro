@@ -19,8 +19,7 @@ mod tests {
         }) => {
             paste::paste! {
                 $vis struct $struct_name {
-                    customized_field: i32,
-                    // 以下是自定义的字段
+                    // original_field
                     $($user_field_vis $user_field_name : $user_field_type,)*
                 }
 
@@ -40,10 +39,7 @@ mod tests {
 
     #[test]
     fn test_procedure_macro_syntax() {
-        let s = StructName {
-            prop: 4,
-            customized_field: 5,
-        };
+        let s = StructName { prop: 4 };
         s.print();
     }
 }
