@@ -24,7 +24,7 @@ macro_rules! trait_variable {
         dollar = {$dollar:tt},
     ) => {
         $crate::trait_variable! {
-            @enhance_trait
+            @enhance_trait  // NOTE: this is a recursive call
             trait_def = $trait_def,
             content = { $($trait_content)* },
             fields = {
@@ -79,15 +79,15 @@ macro_rules! trait_variable {
                     Self { $($field_name,)* }
                 }
             }
+            //  the struct macro part
             #[doc(hidden)]
             #[macro_export] // <-- Only if the trait's visibility is `pub`
             macro_rules! __temp_macro_name {
                 (
                     $dollar (#[$dollar struct_attr:meta])*
-                    $dollar vis:vis
-                    struct
-                    $dollar struct_name:ident
-                    { $dollar ( $dollar struct_content:tt )* }
+                    $dollar vis:vis struct $dollar struct_name:ident {
+                        $dollar ( $dollar struct_content:tt )*
+                    }
                 ) => {
                     $dollar (#[$dollar struct_attr])*
                     $dollar vis struct $dollar struct_name {
@@ -117,12 +117,13 @@ macro_rules! trait_variable {
                 };
             }
             // Expose this macro under the same name as the trait:
-            $vis use __temp_macro_name as $trait_name;
+            $vis use __temp_macro_name as $trait_name; // without this, arm `2` can't be triggered
         }
     };
-    // Forward struct definition to generated macro next to the trait:
+    // 2. Entry point for parsing a struct, to generated macro next to the trait:
     (
-        ($trait:path) // this line is just used as a tag
+        #[trait_var($trait:path)] // this line is just used as a tag
+        // ($trait:path) // this line is just used as a tag
         $(#[$attr:meta])*
         $vis:vis struct $struct_name:ident {
             $(
@@ -131,6 +132,7 @@ macro_rules! trait_variable {
             ),* $(,)?
         }
     ) => {
+        // the `$trait！` is doing the `__temp_macro_name` job
         $trait! {
             $(#[$attr])*
             $vis struct $struct_name {
@@ -141,7 +143,7 @@ macro_rules! trait_variable {
             }
         }
     };
-    // Entry point for parsing a trait:
+    // 1. Entry point for parsing a trait:
     (
         $(#[$attr:meta])*
         $vis:vis trait $trait_name:ident {
@@ -149,7 +151,7 @@ macro_rules! trait_variable {
         }
     ) => {
         $crate::trait_variable!{
-            @enhance_trait
+            @enhance_trait  // NOTE: this is a recursive call
             trait_def = {
                 $(#[$attr])*
                 $vis trait $trait_name
