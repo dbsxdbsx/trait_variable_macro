@@ -1,38 +1,23 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::quote;
+use syn::ItemTrait;
 use syn::{
     parse::Parse, parse::ParseStream, parse_macro_input, AttributeArgs, DeriveInput, Meta,
     NestedMeta,
 };
 
 #[proc_macro_attribute]
-pub fn trait_var(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(item as DeriveInput);
-    let attr_args = parse_macro_input!(attr as AttributeArgs);
-
-    // let attribute_name = match &attr_args[0] {
-    //     NestedMeta::Meta(Meta::Path(path)) => path.get_ident().unwrap().to_string(),
-    //     _ => panic!("Expected a single identifier for the attribute"),
-    // };
-
-    // println!("the att name is:{}",attribute_name);
-
-    // let expanded = quote! {
-    //     trait_variable! {
-    //         #[trait_var(#attribute_name)]
-    //         #input
-    //     }
-    // };
-
-    let expanded = quote!{
-        trait_variable! {
-            #input
+pub fn trait_var(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(item as ItemTrait);
+    let ident = input.ident;
+    let items = input.items;
+    let expanded = quote! {
+        trait_variable! trait #ident {
+            #(#items)*
         }
     };
-
-    // println!("{}", expanded.to_string());
-    expanded.into()
+    TokenStream::from(expanded)
 }
 
 // bak code
