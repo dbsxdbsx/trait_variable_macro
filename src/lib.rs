@@ -11,19 +11,27 @@ pub fn trait_var(attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
     let attr_args = parse_macro_input!(attr as AttributeArgs);
 
-    let attribute_name = match &attr_args[0] {
-        NestedMeta::Meta(Meta::Path(path)) => path.get_ident().unwrap().to_string(),
-        _ => panic!("Expected a single identifier for the attribute"),
-    };
+    // let attribute_name = match &attr_args[0] {
+    //     NestedMeta::Meta(Meta::Path(path)) => path.get_ident().unwrap().to_string(),
+    //     _ => panic!("Expected a single identifier for the attribute"),
+    // };
 
-    let expanded = quote! {
+    // println!("the att name is:{}",attribute_name);
+
+    // let expanded = quote! {
+    //     trait_variable! {
+    //         #[trait_var(#attribute_name)]
+    //         #input
+    //     }
+    // };
+
+    let expanded = quote!{
         trait_variable! {
-            #[trait_var(#attribute_name)]
             #input
         }
     };
 
-    println!("{}", expanded.to_string());
+    // println!("{}", expanded.to_string());
     expanded.into()
 }
 
