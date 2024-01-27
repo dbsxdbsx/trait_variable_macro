@@ -2,24 +2,32 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
-    parse::Parse, parse::ParseStream, parse_macro_input, AttributeArgs, DeriveInput, Meta,
-    NestedMeta,
+    parse::Parse, parse::ParseStream, parse_macro_input, AttributeArgs, DeriveInput, ItemStruct,
+    ItemTrait, Lit, Meta, MetaNameValue, NestedMeta,
 };
-use syn::{ItemStruct, ItemTrait};
 
 #[proc_macro_attribute]
 pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
-    // 解析属性参数
-    let args = parse_macro_input!(args as AttributeArgs);
-    let trait_name = match &args[0] {
-        NestedMeta::Meta(Meta::Path(path)) => path.get_ident().unwrap().to_string(),
-        _ => panic!("Expected a trait name"),
+    // Parse the attribute input tokens into a MetaNameValue
+    let args = parse_macro_input!(args as Meta);
+    let trait_name = match args {
+        Meta::List(meta_list) => {
+            // Expecting only one nested meta inside the list
+            if meta_list.nested.len() != 1 {
+                panic!("Expected exactly one trait name as argument");
+            }
+            match &meta_list.nested[0] {
+                syn::NestedMeta::Lit(Lit::Str(lit_str)) => lit_str.value(),
+                _ => panic!("Expected a string literal for the trait name"),
+            }
+        }
+        _ => panic!("Expected a list of arguments"),
     };
 
-    // 解析输入结构体
+    // Parse the input TokenStream into an ItemStruct
     let input_struct = parse_macro_input!(input as ItemStruct);
 
-    // 生成新的代码
+    // Generate the expanded code
     let expanded = quote! {
         trait_variable! {
             (#trait_name)
@@ -27,7 +35,7 @@ pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
         }
     };
 
-    // 返回生成的代码
+    // Return the generated code
     expanded.into()
 }
 
