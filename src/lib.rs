@@ -32,17 +32,3 @@ pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
     // 返回生成的代码
     expanded.into()
 }
-
-// TODO: for tag trait, not ok yet
-// #[proc_macro_attribute]
-// pub fn trait_var(_attr: TokenStream, item: TokenStream) -> TokenStream {
-//     let input = parse_macro_input!(item as ItemTrait);
-//     let ident = input.ident;
-//     let items = input.items;
-//     let expanded = quote! {
-//         trait_variable! trait #ident {
-//             #(#items)*
-//         }
-//     };
-//     TokenStream::from(expanded)
-// }
