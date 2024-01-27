@@ -1,85 +1,46 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::ItemTrait;
 use syn::{
     parse::Parse, parse::ParseStream, parse_macro_input, AttributeArgs, DeriveInput, Meta,
     NestedMeta,
 };
+use syn::{ItemStruct, ItemTrait};
 
 #[proc_macro_attribute]
-pub fn trait_var(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(item as ItemTrait);
-    let ident = input.ident;
-    let items = input.items;
+pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
+    // 解析属性参数
+    let args = parse_macro_input!(args as AttributeArgs);
+    let trait_name = match &args[0] {
+        NestedMeta::Meta(Meta::Path(path)) => path.get_ident().unwrap().to_string(),
+        _ => panic!("Expected a trait name"),
+    };
+
+    // 解析输入结构体
+    let input_struct = parse_macro_input!(input as ItemStruct);
+
+    // 生成新的代码
     let expanded = quote! {
-        trait_variable! trait #ident {
-            #(#items)*
+        trait_variable! {
+            (#trait_name)
+            struct #input_struct
         }
     };
-    TokenStream::from(expanded)
+
+    // 返回生成的代码
+    expanded.into()
 }
 
-// bak code
-
+// for tag trait
 // #[proc_macro_attribute]
-// pub fn trait_var(attr: TokenStream, item: TokenStream) -> TokenStream {
-//     let input = parse_macro_input!(item as DeriveInput);
-//      // let name = &input.ident;
-//      let expanded = quote! {
-//         trait_variable! { // this is the declarative macro exported from crate `trait_variable`
-//             #input
+// pub fn trait_var(_attr: TokenStream, item: TokenStream) -> TokenStream {
+//     let input = parse_macro_input!(item as ItemTrait);
+//     let ident = input.ident;
+//     let items = input.items;
+//     let expanded = quote! {
+//         trait_variable! trait #ident {
+//             #(#items)*
 //         }
 //     };
-
-//     match input.data {
-//         Data::Struct(data_struct) => match data_struct.fields {
-//             Fields::Named(_) | Fields::Unnamed(_) | Fields::Unit => expanded.into(),
-//         },
-//         _ => syn::Error::new_spanned(input, "Expected a struct")
-//             .to_compile_error()
-//             .into(),
-//     }
-// }
-
-// #[proc_macro_attribute]
-// pub fn trait_var(attr: TokenStream, item: TokenStream) -> TokenStream {
-//     let attr_str = attr.to_string();
-//     let trait_name = parse_macro_input!(attr as Ident);
-//     let input = parse_macro_input!(item as DeriveInput);
-//     let struct_name = &input.ident;
-
-//     // 解析特性定义，以便我们可以检查其中的方法
-//     let trait_ast: ItemTrait = syn::parse_str(&attr_str).expect("Failed to parse trait");
-
-//     // 遍历特性中的所有项目
-//     let methods = trait_ast.items.into_iter().filter_map(|item| {
-//         if let TraitItem::Method(TraitItemMethod { sig, .. }) = item {
-//             // 检查方法名称是否符合特定格式
-//             let method_name = &sig.ident;
-//             let method_name_str = method_name.to_string();
-//             if let Some(stripped) = method_name_str.strip_prefix('_') {
-//                 // 提取类型名称和字段名称
-//                 let type_name = &sig.output;
-//                 let field_name = format_ident!("{}", stripped);
-//                 // 生成对应的方法实现
-//                 let generated = quote! {
-//                     fn #method_name(&self) -> #type_name {
-//                         &self.#field_name
-//                     }
-//                 };
-//                 return Some(generated);
-//             }
-//         }
-//         None
-//     });
-
-//     // 生成最终的impl块
-//     let gen = quote! {
-//         impl #trait_name for #struct_name {
-//             #(#methods)*
-//         }
-//     };
-
-//     gen.into()
+//     TokenStream::from(expanded)
 // }
