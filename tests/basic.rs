@@ -5,7 +5,6 @@ mod test {
 
     //↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓trait definition↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
     trait_variable! {
-        // #[trait_var]
         // the lint is also activated inside the macro, using rust_anaylzer for example
         trait MyTrait {  // feel free to add `pub` when needed
             // 1.put the variable fields definition at the top of the target trait before any function
