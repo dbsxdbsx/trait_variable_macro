@@ -11,10 +11,9 @@ pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
     // 解析属性输入
     let args = parse_macro_input!(args as syn::AttributeArgs);
     let trait_name = match args.first().unwrap() {
-        syn::NestedMeta::Meta(syn::Meta::Path(path)) => path.get_ident().unwrap().to_string(),
+        syn::NestedMeta::Meta(syn::Meta::Path(path)) => path.get_ident().unwrap(),
         _ => panic!("Expected a trait name"),
     };
-
     // 解析输入结构体
     let input_struct = parse_macro_input!(input as ItemStruct);
     let struct_name = &input_struct.ident;
@@ -24,6 +23,7 @@ pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
     let expanded = quote! {
         trait_variable! {
             (#trait_name)
+            // (MyTrait)
             struct #struct_name {
                 #(#struct_fields),*
             }
