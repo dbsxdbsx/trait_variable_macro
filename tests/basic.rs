@@ -68,6 +68,8 @@ mod test {
     }
     //↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑impl block↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 
+    // NOTE: when using Rust-analyzer, the following code will cause the cyclic reference error by hitting` Run Test|Debug`
+    // please use `cargo test` in terminal instead
     #[test]
     fn test() {
         let mut s = MyStruct {

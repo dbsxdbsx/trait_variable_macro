@@ -23,7 +23,6 @@ pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
     let expanded = quote! {
         trait_variable! {
             (#trait_name)
-            // (MyTrait)
             struct #struct_name {
                 #(#struct_fields),*
             }
