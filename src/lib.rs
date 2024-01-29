@@ -13,6 +13,7 @@ pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
     };
     // 解析输入结构体
     let input_struct = parse_macro_input!(input as ItemStruct);
+    let visible = &input_struct.vis;
     let struct_name = &input_struct.ident;
     let struct_fields = input_struct.fields.iter().map(ToTokens::to_token_stream);
 
@@ -20,7 +21,7 @@ pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
     let expanded = quote! {
         trait_variable! {
             (#trait_name)
-            struct #struct_name {
+            #visible struct #struct_name {
                 #(#struct_fields),*
             }
         }
