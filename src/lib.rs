@@ -1,10 +1,7 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{
-    parse::Parse, parse::ParseStream, parse_macro_input, AttributeArgs, DeriveInput, ItemStruct,
-    ItemTrait, Lit, Meta, MetaNameValue, NestedMeta,
-};
+use syn::{parse_macro_input, ItemStruct};
 
 #[proc_macro_attribute]
 pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
