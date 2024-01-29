@@ -8,9 +8,9 @@ mod test {
         // the lint is also activated inside the macro, using rust_anaylzer for example
         trait MyTrait {  // feel free to add `pub` when needed
             // 1.put the variable fields definition at the top of the target trait before any function
-            let x: i32; // TODO: can't be without variable at present
-            let y: bool;
-            let z : f32;
+            pub x: i32; // TODO: can't be without variable at present
+            pub y: bool;
+            pub z : f32;
 
             // 2.the order of the function definition doesn't matter
             // fn print_x(&self); // ok
@@ -20,7 +20,6 @@ mod test {
             }
             fn print_y(&self);
             fn print_z(&self);
-            fn ret_bool(&self) -> bool;
 
             // fn change_and_print_z(&mut self, new_num: f32) {
             //     *self.get_fields_mut().z = new_num;
@@ -59,10 +58,6 @@ mod test {
         }
         fn print_z(&self) {
             println!("z: `{}`", self.z);
-        }
-
-        fn ret_bool(&self) -> bool {
-            true
         }
     }
     //↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑impl block↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
