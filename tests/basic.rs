@@ -71,7 +71,7 @@ mod test {
     // please use `cargo test` in terminal instead
     #[test]
     fn test() {
-        let mut s = MyStruct {
+        let s = MyStruct {
             a: 2,
             x: 3,
             y: true,
