@@ -52,19 +52,6 @@ dependencies = [
 [[package]]
 name = "trait-variable-macros"
 version = "0.1.1"
-dependencies = [
- "lazy_static",
- "once_cell",
- "paste",
- "proc-macro2",
- "quote",
- "syn",
- "trait_variable",
-]
-
-[[package]]
-name = "trait-variable-macros"
-version = "0.1.1"
 source = "git+https://github.com/dbsxdbsx/trait_variable_macros.git#ab917493f3815ecb2fd4efa4d6c74c3f746f3999"
 dependencies = [
  "lazy_static",
@@ -76,13 +63,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "trait-variable-macros"
+version = "0.3.0"
+dependencies = [
+ "lazy_static",
+ "once_cell",
+ "paste",
+ "proc-macro2",
+ "quote",
+ "syn",
+ "trait_variable",
+]
+
+[[package]]
 name = "trait_variable"
 version = "0.2.0"
 source = "git+https://github.com/dbsxdbsx/trait_variable.git#78dc006a22ba29a5551817a05071e2adaf0e7627"
 dependencies = [
  "paste",
  "quote",
- "trait-variable-macros 0.1.1 (git+https://github.com/dbsxdbsx/trait_variable_macros.git)",
+ "trait-variable-macros 0.1.1",
 ]
 
 [[package]]
