@@ -28,9 +28,9 @@ pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
 
     // expand code
     let expanded = quote! {
-        use #hidden_trait_path;
         trait_variable! {
             (#trait_name)
+            [#hidden_trait_path]
             #visible struct #struct_name {
                 #(#struct_fields),*
             }
