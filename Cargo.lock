@@ -65,8 +65,7 @@ dependencies = [
 [[package]]
 name = "trait-variable-macros"
 version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df2dc416288672db2dce06908c873eb84399731a3441363804252040d6846352"
+source = "git+https://github.com/dbsxdbsx/trait_variable_macros.git#12bef3abe90de5941e25374efb923ba2d296c41c"
 dependencies = [
  "lazy_static",
  "once_cell",
@@ -79,11 +78,11 @@ dependencies = [
 [[package]]
 name = "trait_variable"
 version = "0.3.0"
-source = "git+https://github.com/dbsxdbsx/trait_variable.git#a416c4be3a41d544fd151475b8a0f62ee2fe1b9f"
+source = "git+https://github.com/dbsxdbsx/trait_variable.git#a24be750520dc5adff34a760eab61f10a5e52260"
 dependencies = [
  "paste",
  "quote",
- "trait-variable-macros 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "trait-variable-macros 0.3.1 (git+https://github.com/dbsxdbsx/trait_variable_macros.git)",
 ]
 
 [[package]]

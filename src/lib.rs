@@ -11,7 +11,7 @@ pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
         syn::NestedMeta::Meta(syn::Meta::Path(path)) => (path, path.get_ident().unwrap()),
         _ => panic!("Expected a trait name"),
     };
-    // create hidden_trait_path
+    // parse hidden_trait_path
     let mut hidden_trait_path = trait_path.clone();
     if let Some(last_segment) = hidden_trait_path.segments.last_mut() {
         let ident = Ident::new(
@@ -30,7 +30,7 @@ pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
     let expanded = quote! {
         trait_variable! {
             (#trait_name)
-            [#hidden_trait_path]
+            (#hidden_trait_path)
             #visible struct #struct_name {
                 #(#struct_fields),*
             }
