@@ -1,7 +1,7 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{parse_macro_input, Ident, ItemStruct, Path, PathSegment};
+use syn::{parse_macro_input, Ident, ItemStruct};
 
 #[proc_macro_attribute]
 pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
@@ -11,6 +11,7 @@ pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
         syn::NestedMeta::Meta(syn::Meta::Path(path)) => (path, path.get_ident().unwrap()),
         _ => panic!("Expected a trait name"),
     };
+    // TODO: seems no need?
     // parse hidden_trait_path
     let mut hidden_trait_path = trait_path.clone();
     if let Some(last_segment) = hidden_trait_path.segments.last_mut() {
@@ -67,7 +68,6 @@ pub fn test_macro_output(args: TokenStream, _input: TokenStream) -> TokenStream 
     // 返回
     expanded.into()
 }
-
 
 // TODO: delete?
 // use proc_macro::Span;
