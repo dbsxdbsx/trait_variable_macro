@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test {
     use trait_variable::trait_variable;
-    use trait_variable_macros::trait_var;
+    use trait_variable_macros::{test_macro_output, trait_var};
 
     //↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓trait definition↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
     trait_variable! {
@@ -61,6 +61,9 @@ mod test {
         }
     }
     //↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑impl block↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+
+    #[test_macro_output(MyTrait2)]
+    struct MyStruct2;
 
     // NOTE: when using Rust-analyzer, the following code will cause the cyclic reference error by hitting` Run Test|Debug`
     // please use `cargo test` in terminal instead

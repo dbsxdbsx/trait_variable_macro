@@ -4,7 +4,7 @@
     edition="2021"
     description="Make variable fields feasible in trait definition(the procedural macros part)."
     repository="https://github.com/dbsxdbsx/trait_variable_macros"
-    license="MIT"
+    license="MIT OR Apache-2.0"
     documentation="https://docs.rs/trait_variable_macros"
     categories=[
         "development-tools::cargo-plugins",
@@ -35,3 +35,7 @@
 
 [dev-dependencies]
     trait_variable={git="https://github.com/dbsxdbsx/trait_variable.git", features=[]}
+
+[[test]]
+    name="basic"
+    path="tests/basic.rs"
