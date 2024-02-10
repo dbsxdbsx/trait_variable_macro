@@ -33,6 +33,8 @@
     lazy_static="^1.4"
     once_cell  ="^1.8"
 
+    regex="^1.5"
+
 [dev-dependencies]
     trait_variable={git="https://github.com/dbsxdbsx/trait_variable.git", features=[]}
 

@@ -1,8 +1,203 @@
-extern crate proc_macro;
 use proc_macro::TokenStream;
-use quote::{quote, ToTokens};
-use syn::{parse_macro_input, Ident, ItemStruct};
+use quote::quote;
+use regex::{Captures, Regex};
+use syn::{braced, token};
+use syn::{
+    parse::{Parse, ParseStream},
+    parse_macro_input,
+    punctuated::Punctuated,
+    Ident, Token, TraitItem, Type,
+};
 
+struct TraitVarField {
+    var_name: Ident,
+    _colon_token: Token![:],
+    ty: Type,
+}
+impl Parse for TraitVarField {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        Ok(TraitVarField {
+            var_name: input.parse()?,
+            _colon_token: input.parse()?,
+            ty: input.parse()?,
+        })
+    }
+}
+
+struct TraitInput {
+    _trait_token: Token![trait],
+    trait_ident: Ident,
+    _brace_token: token::Brace,
+    trait_variables: Punctuated<TraitVarField, Token![;]>,
+    trait_items: Vec<TraitItem>, // 使用Vec<TraitItem>来代替Punctuated<TraitItem, Token![;]>
+}
+
+impl Parse for TraitInput {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let content;
+        Ok(TraitInput {
+            _trait_token: input.parse()?,
+            trait_ident: input.parse()?,
+            _brace_token: braced!(content in input),
+            // Parse all variable declarations until a method or end of input is encountered
+            trait_variables: {
+                let mut vars = Punctuated::new();
+                while !content.peek(Token![fn]) && !content.peek(Token![;]) && !content.is_empty() {
+                    vars.push_value(content.parse()?);
+                    // Ensure that a semicolon follows the variable declaration
+                    if !content.peek(Token![;]) {
+                        return Err(content.error("expected `;` after variable declaration"));
+                    }
+                    vars.push_punct(content.parse()?);
+                }
+                vars
+            },
+            // Parse all method declarations
+            // trait_methods: content.parse_terminated(TraitItem::parse)?,
+            trait_items: {
+                let mut items = Vec::new();
+                while !content.is_empty() {
+                    items.push(content.parse()?);
+                }
+                items
+            },
+        })
+    }
+}
+
+#[proc_macro]
+pub fn test_fn_macro(input: TokenStream) -> TokenStream {
+    let TraitInput {
+        trait_ident,
+        trait_variables,
+        trait_items,
+        ..
+    } = parse_macro_input!(input as TraitInput);
+    // 1.get (parent) trait name
+    let parent_trait_ident = Ident::new(&format!("_{}", trait_ident), trait_ident.span());
+    // 2. generate methods for parent trait
+    let parent_trait_methods =
+        trait_variables
+            .iter()
+            .map(|TraitVarField { var_name, ty, .. }| {
+                let method_name = Ident::new(&format!("_{}", var_name), var_name.span());
+                quote! {
+                    fn #method_name(&self) -> &#ty;
+                }
+            });
+    // 3. generate methods for the original trait
+    // let original_trait_items = trait_items.into_iter().map(|item| quote! { #item });
+    let original_trait_items = trait_items.into_iter().map(|item| {
+        if let TraitItem::Method(mut method) = item {
+            if let Some(body) = &mut method.default {
+                // 使用正则表达式或其他方法来查找和替换文本
+                let re = Regex::new(r"self\.([a-zA-Z_]\w*)").unwrap();
+                let body_str = quote!(#body).to_string();
+                let new_body_str = re
+                    .replace_all(&body_str, |caps: &Captures| {
+                        let name = &caps[1];
+                        // 检查是否跟随括号
+                        if body_str.contains(&format!("{}(", name)) {
+                            format!("self.{}", name)
+                        } else {
+                            format!("self._{}()", name)
+                        }
+                    })
+                    .to_string();
+
+                let new_body: TokenStream = new_body_str.parse().expect("Failed to parse new body");
+                method.default = Some(syn::parse(new_body).expect("Failed to parse method body"));
+            }
+            quote! { #method }
+        } else {
+            quote! { #item }
+        }
+    });
+
+    // let original_trait_items = trait_items.into_iter().map(|item| {
+    //     if let TraitItem::Method(mut method) = item {
+    //         if let Some(body) = &mut method.default {
+    //             // 将函数体转换为字符串并进行替换
+    //             let body_str = quote!(#body).to_string();
+    //             let new_body_str = body_str.replace("self.", "self._");
+    //             let new_body: TokenStream = new_body_str
+    //                 .parse()
+    //                 .unwrap_or_else(|_| quote!(#body).into());
+    //             method.default = Some(syn::parse(new_body).unwrap());
+    //         }
+    //         quote! { #method }
+    //     } else {
+    //         quote! { #item }
+    //     }
+    // });
+    // 4. expand code
+    let expanded = quote! {
+        trait #parent_trait_ident {
+            #(#parent_trait_methods)*
+        }
+        trait #trait_ident: #parent_trait_ident {
+            #(#original_trait_items)*
+        }
+    };
+    TokenStream::from(expanded)
+}
+
+// new ok but only no trait:
+// extern crate proc_macro;
+
+// use proc_macro::TokenStream;
+// use quote::{quote, ToTokens};
+// use syn::ItemStruct;
+// use syn::{
+//     parse::Parse, parse::ParseStream, parse_macro_input, punctuated::Punctuated, Ident, Token, Type,
+// };
+
+// struct MacroInput {
+//     vars: Punctuated<Var, Token![;]>,
+// }
+// impl Parse for MacroInput {
+//     fn parse(input: ParseStream) -> syn::Result<Self> {
+//         let vars = Punctuated::parse_terminated(input)?;
+//         Ok(MacroInput { vars })
+//     }
+// }
+
+// struct Var {
+//     var_name: Ident,
+//     _colon: Token![:],
+//     ty: Type,
+// }
+// impl Parse for Var {
+//     fn parse(input: ParseStream) -> syn::Result<Self> {
+//         Ok(Var {
+//             var_name: input.parse()?,
+//             _colon: input.parse()?,
+//             ty: input.parse()?,
+//         })
+//     }
+// }
+
+// #[proc_macro]
+// pub fn test_fn_macro(input: TokenStream) -> TokenStream {
+//     let MacroInput { vars } = parse_macro_input!(input as MacroInput);
+
+//     let methods = vars.iter().map(|Var { var_name, ty, .. }| {
+//         let method_name = Ident::new(&format!("_{}", var_name), var_name.span());
+//         quote! {
+//             fn #method_name(&self) -> &#ty;
+//         }
+//     });
+
+//     let expanded = quote! {
+//         trait MyTrait {
+//             #(#methods)*
+//         }
+//     };
+
+//     TokenStream::from(expanded)
+// }
+
+// OLD: OK
 #[proc_macro_attribute]
 pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
     // parse attributes
@@ -23,10 +218,13 @@ pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 
     // parse input, only accept `struct`
-    let input_struct = parse_macro_input!(input as ItemStruct);
+    let input_struct = parse_macro_input!(input as syn::ItemStruct);
     let visible = &input_struct.vis;
     let struct_name = &input_struct.ident;
-    let struct_fields = input_struct.fields.iter().map(ToTokens::to_token_stream);
+    let struct_fields = input_struct
+        .fields
+        .iter()
+        .map(quote::ToTokens::to_token_stream);
 
     // expand code
     let expanded = quote! {
@@ -68,24 +266,3 @@ pub fn test_macro_output(args: TokenStream, _input: TokenStream) -> TokenStream 
     // 返回
     expanded.into()
 }
-
-// TODO: delete?
-// use proc_macro::Span;
-
-// #[proc_macro_attribute]
-// pub fn test_macro_output2(_attr: TokenStream, item: TokenStream) -> TokenStream {
-//     // 获取当前Span的源文件信息
-//     let source_file = Span::call_site().source_file();
-
-//     // 获取源文件的路径
-//     let path = source_file.path();
-
-//     // 将路径转换为字符串
-//     let path_string = path.to_string_lossy();
-
-//     // 打印出路径
-//     println!("The source file path is: {}", path_string);
-
-//     // 返回原始的TokenStream
-//     item
-// }
