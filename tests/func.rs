@@ -19,7 +19,10 @@ mod test {
         }
     }
 
-    struct MyStruct;
+    struct MyStruct {
+        field_1: i32,
+        field_2: u64,
+    }
 
     impl _MyTrait for MyStruct {
         fn _my_var(&self) -> &i32 {
@@ -27,6 +30,14 @@ mod test {
         }
         fn _my_var2(&self) -> &u64 {
             &2
+        }
+
+        fn _my_var_mut(&mut self) -> &mut i32 {
+            &mut self.field_1
+        }
+
+        fn _my_var2_mut(&mut self) -> &mut u64 {
+            &mut self.field_2
         }
     }
 
@@ -40,12 +51,16 @@ mod test {
     }
     #[test]
     fn test() {
-        let s = MyStruct;
+        let mut s = MyStruct {
+            field_1: 1,
+            field_2: 2,
+        };
         s.test1();
         s.test2();
         s.test3();
         s._my_var();
-        // println!("{}", my_var);
+        println!("{}", s._my_var());
+        println!("{}", s._my_var_mut());
         // println!("{}", my_var2);
     }
 }

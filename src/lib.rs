@@ -29,7 +29,7 @@ struct TraitInput {
     trait_ident: Ident,
     _brace_token: token::Brace,
     trait_variables: Punctuated<TraitVarField, Token![;]>,
-    trait_items: Vec<TraitItem>, // 使用Vec<TraitItem>来代替Punctuated<TraitItem, Token![;]>
+    trait_items: Vec<TraitItem>,
 }
 
 impl Parse for TraitInput {
@@ -81,8 +81,10 @@ pub fn test_fn_macro(input: TokenStream) -> TokenStream {
             .iter()
             .map(|TraitVarField { var_name, ty, .. }| {
                 let method_name = Ident::new(&format!("_{}", var_name), var_name.span());
+                let method_name_mut = Ident::new(&format!("_{}_mut", var_name), var_name.span());
                 quote! {
                     fn #method_name(&self) -> &#ty;
+                    fn #method_name_mut(&mut self) -> &mut #ty;
                 }
             });
     // 3. generate methods for the original trait
@@ -113,23 +115,6 @@ pub fn test_fn_macro(input: TokenStream) -> TokenStream {
             quote! { #item }
         }
     });
-
-    // let original_trait_items = trait_items.into_iter().map(|item| {
-    //     if let TraitItem::Method(mut method) = item {
-    //         if let Some(body) = &mut method.default {
-    //             // 将函数体转换为字符串并进行替换
-    //             let body_str = quote!(#body).to_string();
-    //             let new_body_str = body_str.replace("self.", "self._");
-    //             let new_body: TokenStream = new_body_str
-    //                 .parse()
-    //                 .unwrap_or_else(|_| quote!(#body).into());
-    //             method.default = Some(syn::parse(new_body).unwrap());
-    //         }
-    //         quote! { #method }
-    //     } else {
-    //         quote! { #item }
-    //     }
-    // });
     // 4. expand code
     let expanded = quote! {
         trait #parent_trait_ident {
