@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use regex::{Captures, Regex};
-use syn::{braced, token};
+use syn::{braced, token, ItemTrait};
 use syn::{
     parse::{Parse, ParseStream},
     parse_macro_input,
@@ -9,6 +9,53 @@ use syn::{
     Ident, Token, TraitItem, Type,
 };
 
+extern crate proc_macro;
+
+#[proc_macro]
+pub fn refine_trait_fn_body(item: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(item as ItemTrait);
+
+    // Extract trait_ident and parent_trait_ident from input
+    let trait_ident = &input.ident;
+    let parent_trait_ident = input.supertraits.first().expect("Expected a parent trait");
+
+    let refined_trait_fns = input.items.into_iter().map(|item| {
+        if let TraitItem::Method(mut method) = item {
+            if let Some(body) = &mut method.default {
+                // Use regular expressions or other methods to find and replace text
+                let re = Regex::new(r"self\.([a-zA-Z_]\w*)").unwrap();
+                let body_str = quote!(#body).to_string();
+                let new_body_str = re
+                    .replace_all(&body_str, |caps: &Captures| {
+                        let name = &caps[1];
+                        // Check if it is followed by parentheses
+                        if body_str.contains(&format!("{}(", name)) {
+                            format!("self.{}", name)
+                        } else {
+                            format!("(*self._{}())", name) // TODO：what about the `mut` version?
+                        }
+                    })
+                    .to_string();
+
+                let new_body: TokenStream = new_body_str.parse().expect("Failed to parse new body");
+                method.default = Some(syn::parse(new_body).expect("Failed to parse method body"));
+            }
+            quote!(#method)
+        } else {
+            quote!(#item)
+        }
+    });
+
+    // expand code
+    let expanded = quote! {
+        trait #trait_ident: #parent_trait_ident {
+            #(#refined_trait_fns)*
+        }
+    };
+    TokenStream::from(expanded)
+}
+
+// ------------------1st functional macro：ok--------------------------
 struct TraitVarField {
     var_name: Ident,
     _colon_token: Token![:],
