@@ -127,61 +127,6 @@ pub fn test_fn_macro(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
-// new ok but only no trait:
-// extern crate proc_macro;
-
-// use proc_macro::TokenStream;
-// use quote::{quote, ToTokens};
-// use syn::ItemStruct;
-// use syn::{
-//     parse::Parse, parse::ParseStream, parse_macro_input, punctuated::Punctuated, Ident, Token, Type,
-// };
-
-// struct MacroInput {
-//     vars: Punctuated<Var, Token![;]>,
-// }
-// impl Parse for MacroInput {
-//     fn parse(input: ParseStream) -> syn::Result<Self> {
-//         let vars = Punctuated::parse_terminated(input)?;
-//         Ok(MacroInput { vars })
-//     }
-// }
-
-// struct Var {
-//     var_name: Ident,
-//     _colon: Token![:],
-//     ty: Type,
-// }
-// impl Parse for Var {
-//     fn parse(input: ParseStream) -> syn::Result<Self> {
-//         Ok(Var {
-//             var_name: input.parse()?,
-//             _colon: input.parse()?,
-//             ty: input.parse()?,
-//         })
-//     }
-// }
-
-// #[proc_macro]
-// pub fn test_fn_macro(input: TokenStream) -> TokenStream {
-//     let MacroInput { vars } = parse_macro_input!(input as MacroInput);
-
-//     let methods = vars.iter().map(|Var { var_name, ty, .. }| {
-//         let method_name = Ident::new(&format!("_{}", var_name), var_name.span());
-//         quote! {
-//             fn #method_name(&self) -> &#ty;
-//         }
-//     });
-
-//     let expanded = quote! {
-//         trait MyTrait {
-//             #(#methods)*
-//         }
-//     };
-
-//     TokenStream::from(expanded)
-// }
-
 // OLD: OK
 #[proc_macro_attribute]
 pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {

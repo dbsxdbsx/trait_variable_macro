@@ -7,13 +7,17 @@ mod test {
             my_var: i32;
             my_var2: u64;
             // ... more variables can be added
-            fn test1(&self);
+            fn test1(&mut self);
             fn test2(&self){
                 println!("I am test2");
             }
-            fn test3(&self){
+            fn test3(&mut self){
                 self.test2();
-                println!("I am test3:{},{}",self.my_var,self.my_var2);
+                let mut x = *self.my_var;
+                x += 1;
+                // self.my_var = 1;
+                // (*self._my_var_mut()) = 1; // ok
+                println!("I am test3:{},{}", self.my_var, self.my_var2);
             }
             // ... more functions can be added
         }
@@ -42,7 +46,8 @@ mod test {
     }
 
     impl MyTrait for MyStruct {
-        fn test1(&self) {
+        fn test1(&mut self) {
+            // Change the method signature to take a mutable reference to self
             println!("test");
         }
         fn test2(&self) {
