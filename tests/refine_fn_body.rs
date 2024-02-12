@@ -9,6 +9,7 @@ mod test {
         fn _my_var2(&self) -> &u64;
         fn _my_var2_mut(&mut self) -> &mut u64;
     }
+    // 只能先用函数宏将所有trait的东西展开，并附带一个包含field的声明宏内容（用以struct部分调用）
     refine_trait_fn_body! {
         trait MyTrait: _MyTrait {
             fn test1(&mut self);
@@ -59,8 +60,20 @@ mod test {
             println!("I am test22");
         }
     }
+
+    // Declarative macro to expand into `let x = 0;`
+    // #[macro_export]
+    // macro_rules! test_dec {
+    //     ($x:ident) => {
+    //         let mut $x = 0;
+    //     };
+    // }
+
     #[test]
     fn test() {
+        test_dec!(x);
+        x = 1;
+        println!("{x}");
         let mut s = MyStruct {
             field_1: 1,
             field_2: 2,
