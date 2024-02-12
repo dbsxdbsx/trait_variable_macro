@@ -45,12 +45,21 @@ pub fn refine_trait_fn_body(item: TokenStream) -> TokenStream {
             quote!(#item)
         }
     });
-
+    // test declarative macro
+    let decl_macro_code = quote! {
+        #[macro_export]
+        macro_rules! test_dec {
+            ($x:ident) => {
+                let mut $x = 0;
+            };
+        }
+    };
     // expand code
     let expanded = quote! {
         trait #trait_ident: #parent_trait_ident {
             #(#refined_trait_fns)*
         }
+        #decl_macro_code
     };
     TokenStream::from(expanded)
 }
@@ -120,7 +129,7 @@ pub fn test_fn_macro(input: TokenStream) -> TokenStream {
         trait_items,
         ..
     } = parse_macro_input!(input as TraitInput);
-    // 1.get (parent) trait name
+    // 1.get parent trait name
     let parent_trait_ident = Ident::new(&format!("_{}", trait_ident), trait_ident.span());
     // 2. generate methods for parent trait
     let parent_trait_methods =
@@ -162,7 +171,16 @@ pub fn test_fn_macro(input: TokenStream) -> TokenStream {
             quote! { #item }
         }
     });
-    // 4. expand code
+    // 4. test declarative macro
+    let decl_macro_code = quote! {
+        #[macro_export]
+        macro_rules! test_dec {
+            ($x:ident) => {
+                let mut $x = 0;
+            };
+        }
+    };
+    // 5. expand code
     let expanded = quote! {
         trait #parent_trait_ident {
             #(#parent_trait_methods)*
@@ -170,6 +188,7 @@ pub fn test_fn_macro(input: TokenStream) -> TokenStream {
         trait #trait_ident: #parent_trait_ident {
             #(#original_trait_items)*
         }
+        #decl_macro_code
     };
     TokenStream::from(expanded)
 }
