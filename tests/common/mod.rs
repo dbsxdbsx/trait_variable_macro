@@ -1,4 +1,4 @@
-use trait_variable_macros::trait_variable;
+use trait_variable_macros::{trait_var, trait_variable};
 //↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓trait definition↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
 trait_variable! {
     pub(crate) trait MyTrait {  // feel free to add `pub` when needed
@@ -11,7 +11,7 @@ trait_variable! {
         fn get_print_field_x(&self) -> &i32{
             println!("x: `{}`", self._x());// TODO: make self.<> valid
             self._x()
-            // &self.x
+            // self.x
         }
         fn get_print_field_y(&self) -> &bool;
         fn get_print_field_z(&self) -> &f32;
@@ -25,19 +25,20 @@ trait_variable! {
 
 //↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓struct definition↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
 // way1: use the attribute macro to generate the struct (Recommended)
-// #[trait_var(MyTrait)]
-// struct MyStruct {
-//     a: i32,
-// }
-// way2: use the hidden declarative macro to generate the struct (Not recommended)
-MyTrait_for_struct! {
-    (_MyTrait) // inputput the hiddent parent trait
-    pub struct MyStruct { // TODO: feel free to add `pub` when needed
-     // feel free to add any fields as usual or leave it empty
-     a: i32,
-     pub b: String,
-    }
+#[trait_var(MyTrait)]
+pub struct MyStruct {
+    a: i32,
+    pub b: String,
 }
+// way2: use the hidden declarative macro to generate the struct (Not recommended)
+// MyTrait_for_struct! {
+//     (_MyTrait) // inputput the hiddent parent trait
+//     pub struct MyStruct { // TODO: feel free to add `pub` when needed
+//      // feel free to add any fields as usual or leave it empty
+//      a: i32,
+//      pub b: String,
+//     }
+// }
 
 impl MyStruct {
     pub fn new(a: i32, b: String, x: i32, y: bool, z: f32) -> Self {
@@ -63,6 +64,7 @@ impl MyTrait for MyStruct {
     }
 }
 //↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑struct definition↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+// TODO: delete the following code with file `test_struct.rs`
 // use trait_variable_macros::trait_variable;
 // mod test_struct;
 // pub use test_struct::MyStruct;
