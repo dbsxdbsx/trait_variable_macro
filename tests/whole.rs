@@ -5,79 +5,78 @@ mod test {
 
     //↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓trait definition↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
     trait_variable! {
-        // the lint is also activated inside the macro, using rust_anaylzer for example
         trait MyTrait {  // feel free to add `pub` when needed
             // 1.put the variable fields definition at the top of the target trait before any function
-            pub x: i32; // TODO: can't be without variable at present
-            pub y: bool;
-            pub z : f32;
+             x: i32; // TODO: visibility modifier is not supported yet
+             y: bool;
+             z : f32;
 
             // 2.the order of the function definition doesn't matter
-            // fn print_x(&self); // ok
-            fn print_x(&self) {
-                // println!("(original)x: `{}`", self.x);// TODO: make self.<> valid
-                println!("(original)x: `{}`", self._x());
+            fn get_print_field_x(&self) -> &i32{
+                println!("x: `{}`", self._x());// TODO: make self.<> valid
+                &self._x()
             }
-            fn print_y(&self);
-            fn print_z(&self);
-
-            // fn change_and_print_z(&mut self, new_num: f32) {
-            //     *self.get_fields_mut().z = new_num;
-            //     println!("z: `{}`", self.get_fields().z);
-            // }
+            fn get_print_field_y(&self) -> &bool;
+            fn get_print_field_z(&self) -> &f32;
+            fn change_and_print_z(&mut self, new_num: f32) {
+                // self.z = new_num; // TODO
+                // println!("z: `{}`",self.z);
+            }
         }
     }
     //↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑trait definition↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 
     //↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓struct definition↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-    #[trait_var(MyTrait)]
-    struct MyStruct {
-        a: i32,
-    }
-    // trait_variable! {
-    //     (MyTrait) // put this at the top of the struct
-    //     struct MyStruct { // feel free to add `pub` when needed
-    //     // feel free to add any fields as usual or leave it empty
-    //      a: i32,
-    //     }
+    // way1: use the attribute macro to generate the struct (Recommended)
+    // #[trait_var(MyTrait)]
+    // struct MyStruct {
+    //     a: i32,
     // }
-    //↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑struct definition↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+    // way2: use the hidden declarative macro to generate the struct (Not recommended)
+    MyTrait_for_struct! {
+        (_MyTrait) // inputput the hiddent parent trait
+        struct MyStruct { // TODO: feel free to add `pub` when needed
+         // feel free to add any fields as usual or leave it empty
+         a: i32,
+        }
+    }
 
-    //↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓impl block↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
     impl MyStruct {
-        fn print_a(&self) {
+        fn get_print_field_a(&self) -> &i32 {
             println!("a: `{}`", self.a);
+            &self.a
         }
     }
     impl MyTrait for MyStruct {
-        // fn print_x(&self) {
-        //     println!("x: `{}`", self.x);
-        // }
-        fn print_y(&self) {
+        fn get_print_field_y(&self) -> &bool {
             println!("y: `{}`", self.y);
+            &self.y
         }
-        fn print_z(&self) {
+        fn get_print_field_z(&self) -> &f32 {
             println!("z: `{}`", self.z);
+            &self.z
         }
     }
-    //↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑impl block↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
-
-    // #[test_macro_output(MyTrait2)]
-    struct MyStruct2;
+    //↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑struct definition↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 
     // NOTE: when using Rust-analyzer, the following code will cause the cyclic reference error by hitting` Run Test|Debug`
     // please use `cargo test` in terminal instead
     #[test]
     fn test() {
-        let s = MyStruct {
+        let mut s = MyStruct {
             a: 2,
             x: 3,
             y: true,
             z: 1.,
         };
-        s.print_a();
-        s.print_x();
-        s.print_y();
+        // test struct fields
+        let aa = s.a;
+
+        // test methods for struct fields
+        assert_eq!(s.get_print_field_a(), &2);
+        assert_eq!(s.get_print_field_x(), &3);
+        assert_eq!(s.get_print_field_y(), &true);
         // s.change_and_print_z(3.14);
+        // assert_eq!(s.get_print_field_z(), &3.14);
     }
 }

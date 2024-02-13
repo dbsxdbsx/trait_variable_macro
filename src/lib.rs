@@ -1,7 +1,9 @@
+extern crate proc_macro;
+
 use proc_macro::TokenStream;
 use quote::quote;
 use regex::{Captures, Regex};
-use syn::{braced, token, ItemTrait};
+use syn::{braced, token};
 use syn::{
     parse::{Parse, ParseStream},
     parse_macro_input,
@@ -9,62 +11,6 @@ use syn::{
     Ident, Token, TraitItem, Type,
 };
 
-extern crate proc_macro;
-
-#[proc_macro]
-pub fn refine_trait_fn_body(item: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(item as ItemTrait);
-
-    // Extract trait_ident and parent_trait_ident from input
-    let trait_ident = &input.ident;
-    let parent_trait_ident = input.supertraits.first().expect("Expected a parent trait");
-
-    let refined_trait_fns = input.items.into_iter().map(|item| {
-        if let TraitItem::Method(mut method) = item {
-            if let Some(body) = &mut method.default {
-                // Use regular expressions or other methods to find and replace text
-                let re = Regex::new(r"self\.([a-zA-Z_]\w*)").unwrap();
-                let body_str = quote!(#body).to_string();
-                let new_body_str = re
-                    .replace_all(&body_str, |caps: &Captures| {
-                        let name = &caps[1];
-                        // Check if it is followed by parentheses
-                        if body_str.contains(&format!("{}(", name)) {
-                            format!("self.{}", name)
-                        } else {
-                            format!("(*self._{}())", name) // TODO：what about the `mut` version?
-                        }
-                    })
-                    .to_string();
-
-                let new_body: TokenStream = new_body_str.parse().expect("Failed to parse new body");
-                method.default = Some(syn::parse(new_body).expect("Failed to parse method body"));
-            }
-            quote!(#method)
-        } else {
-            quote!(#item)
-        }
-    });
-    // test declarative macro
-    let decl_macro_code = quote! {
-        #[macro_export]
-        macro_rules! test_dec {
-            ($x:ident) => {
-                let mut $x = 0;
-            };
-        }
-    };
-    // expand code
-    let expanded = quote! {
-        trait #trait_ident: #parent_trait_ident {
-            #(#refined_trait_fns)*
-        }
-        #decl_macro_code
-    };
-    TokenStream::from(expanded)
-}
-
-// ------------------1st functional macro：ok--------------------------
 struct TraitVarField {
     var_name: Ident,
     _colon_token: Token![:],
@@ -82,7 +28,7 @@ impl Parse for TraitVarField {
 
 struct TraitInput {
     _trait_token: Token![trait],
-    trait_ident: Ident,
+    trait_name: Ident,
     _brace_token: token::Brace,
     trait_variables: Punctuated<TraitVarField, Token![;]>,
     trait_items: Vec<TraitItem>,
@@ -93,7 +39,7 @@ impl Parse for TraitInput {
         let content;
         Ok(TraitInput {
             _trait_token: input.parse()?,
-            trait_ident: input.parse()?,
+            trait_name: input.parse()?,
             _brace_token: braced!(content in input),
             // Parse all variable declarations until a method or end of input is encountered
             trait_variables: {
@@ -109,7 +55,6 @@ impl Parse for TraitInput {
                 vars
             },
             // Parse all method declarations
-            // trait_methods: content.parse_terminated(TraitItem::parse)?,
             trait_items: {
                 let mut items = Vec::new();
                 while !content.is_empty() {
@@ -121,17 +66,22 @@ impl Parse for TraitInput {
     }
 }
 
+/// a functional macro used to generate code for a trait with variable fields
 #[proc_macro]
-pub fn test_fn_macro(input: TokenStream) -> TokenStream {
+pub fn trait_variable(input: TokenStream) -> TokenStream {
     let TraitInput {
-        trait_ident,
+        trait_name,
         trait_variables,
         trait_items,
         ..
     } = parse_macro_input!(input as TraitInput);
-    // 1.get parent trait name
-    let parent_trait_ident = Ident::new(&format!("_{}", trait_ident), trait_ident.span());
-    // 2. generate methods for parent trait
+    // 1.1 get parent trait name
+    let parent_trait_name = Ident::new(&format!("_{}", trait_name), trait_name.span());
+    // 1.2 get trait declarative macro name
+    let trait_decl_macro_name =
+        Ident::new(&format!("{}_for_struct", trait_name), trait_name.span());
+
+    // 2.1 generate parent trait methods declaration
     let parent_trait_methods =
         trait_variables
             .iter()
@@ -143,18 +93,43 @@ pub fn test_fn_macro(input: TokenStream) -> TokenStream {
                     fn #method_name_mut(&mut self) -> &mut #ty;
                 }
             });
+    // 2.2 generate trait variable fields definition for structs later
+    let struct_trait_fields_defs =
+        trait_variables
+            .iter()
+            .map(|TraitVarField { var_name, ty, .. }| {
+                quote! {
+                    #var_name: #ty,
+                }
+            });
+    // 2.3 generate parent trait methods implementation for struct
+    let parent_trait_methods_impls =
+        trait_variables
+            .iter()
+            .map(|TraitVarField { var_name, ty, .. }| {
+                let method_name = Ident::new(&format!("_{}", var_name), var_name.span());
+                let method_name_mut = Ident::new(&format!("_{}_mut", var_name), var_name.span());
+                quote! {
+                    fn #method_name(&self) -> &#ty{
+                        &self.#var_name
+                    }
+                    fn #method_name_mut(&mut self) -> &mut #ty{
+                        &mut self.#var_name
+                    }
+                }
+            });
+
     // 3. generate methods for the original trait
-    // let original_trait_items = trait_items.into_iter().map(|item| quote! { #item });
     let original_trait_items = trait_items.into_iter().map(|item| {
         if let TraitItem::Method(mut method) = item {
             if let Some(body) = &mut method.default {
-                // 使用正则表达式或其他方法来查找和替换文本
+                // Use regular expressions or other methods to find and replace text
                 let re = Regex::new(r"self\.([a-zA-Z_]\w*)").unwrap();
                 let body_str = quote!(#body).to_string();
                 let new_body_str = re
                     .replace_all(&body_str, |caps: &Captures| {
                         let name = &caps[1];
-                        // 检查是否跟随括号
+                        // Check if it is followed by braces
                         if body_str.contains(&format!("{}(", name)) {
                             format!("self.{}", name)
                         } else {
@@ -171,21 +146,54 @@ pub fn test_fn_macro(input: TokenStream) -> TokenStream {
             quote! { #item }
         }
     });
-    // 4. test declarative macro
+
+    // 4. generate the hidden declarative macro for target struct
     let decl_macro_code = quote! {
-        #[macro_export]
-        macro_rules! test_dec {
-            ($x:ident) => {
-                let mut $x = 0;
+        #[doc(hidden)]
+        #[macro_export] // TODO: <-- Only if the trait's visibility is `pub`
+        macro_rules! #trait_decl_macro_name { // NOTE: the reexpanded macro is used for rust struct only
+            (
+                ($hidden_parent_trait:path)
+                $(#[$struct_attr:meta])* // NOTE: make sure the style is consistent with that in arm 2 output
+                $vis:vis struct $struct_name:ident {
+                    $($struct_content:tt)*
+                }
+            ) => {
+                $(#[$struct_attr])*
+                $vis struct $struct_name {
+                    $($struct_content)*
+                    // NOTE: the following part is from root macro:
+                    // $(
+                    //     // $(#[$field_attr])* // TODO:
+                    //     // $field_vis  // TODO:
+                    //     $trait_field_name: $field_type,// TODO:
+                    // )*
+                    #(
+                        #struct_trait_fields_defs
+                    )*
+                }
+                impl $hidden_parent_trait for $struct_name {
+                //     $( // TODO:
+                //         fn [< _$trait_field_name >](&self) -> &$field_type {
+                //             &self.$trait_field_name
+                //         }
+                //         fn [< _$trait_field_name _mut>](&mut self) -> &mut $field_type {
+                //             &mut self.$trait_field_name
+                //         }
+                //     )*
+                    #(
+                        #parent_trait_methods_impls
+                    )*
+                }
             };
         }
     };
     // 5. expand code
     let expanded = quote! {
-        trait #parent_trait_ident {
+        trait #parent_trait_name {
             #(#parent_trait_methods)*
         }
-        trait #trait_ident: #parent_trait_ident {
+        trait #trait_name: #parent_trait_name {
             #(#original_trait_items)*
         }
         #decl_macro_code
@@ -193,7 +201,7 @@ pub fn test_fn_macro(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
-// OLD: OK
+/// This attribute macro is used to tag Rust struct like: `#[trait_var(<trait_name>)]`
 #[proc_macro_attribute]
 pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
     // parse attributes
@@ -202,7 +210,8 @@ pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
         syn::NestedMeta::Meta(syn::Meta::Path(path)) => (path, path.get_ident().unwrap()),
         _ => panic!("Expected a trait name"),
     };
-    // TODO: seems no need?
+
+    // TODO: delete? seems no need?
     // parse hidden_trait_path
     let mut hidden_trait_path = trait_path.clone();
     if let Some(last_segment) = hidden_trait_path.segments.last_mut() {
@@ -223,10 +232,12 @@ pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
         .map(quote::ToTokens::to_token_stream);
 
     // expand code
+    let trait_macro_name = Ident::new(&format!("{}_for_struct", trait_name), trait_name.span());
+    let parent_trait_name = Ident::new(&format!("_{}", trait_name), trait_name.span());
     let expanded = quote! {
-        trait_variable! {
-            (#trait_name)
-            (#hidden_trait_path)
+        #trait_macro_name! {// TODO: not hard code
+            (#parent_trait_name)
+            // (#hidden_trait_path) // TODO: delete?
             #visible struct #struct_name {
                 #(#struct_fields),*
             }
@@ -234,31 +245,5 @@ pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
     };
 
     // return
-    expanded.into()
-}
-
-#[proc_macro_attribute]
-pub fn test_macro_output(args: TokenStream, _input: TokenStream) -> TokenStream {
-    // 解析属性
-    let args = parse_macro_input!(args as syn::AttributeArgs);
-    let (trait_path, _trait_name) = match args.first().unwrap() {
-        syn::NestedMeta::Meta(syn::Meta::Path(path)) => (path, path.get_ident().unwrap()),
-        _ => panic!("Expected a trait name"),
-    };
-    // 解析 hidden_trait_path
-    let mut hidden_trait_path = trait_path.clone();
-    if let Some(last_segment) = hidden_trait_path.segments.last_mut() {
-        let ident = Ident::new(
-            &format!("_{}", last_segment.ident),
-            last_segment.ident.span(),
-        );
-        last_segment.ident = ident;
-    }
-
-    // 扩展代码
-    let expanded = quote! {
-    use #trait_path;
-    use crate::#hidden_trait_path; };
-    // 返回
     expanded.into()
 }
