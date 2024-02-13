@@ -3,7 +3,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::quote;
 use regex::{Captures, Regex};
-use syn::{braced, token};
+use syn::{braced, token, Visibility};
 use syn::{
     parse::{Parse, ParseStream},
     parse_macro_input,
@@ -12,6 +12,7 @@ use syn::{
 };
 
 struct TraitVarField {
+    var_vis: Visibility,
     var_name: Ident,
     _colon_token: Token![:],
     ty: Type,
@@ -19,6 +20,7 @@ struct TraitVarField {
 impl Parse for TraitVarField {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(TraitVarField {
+            var_vis: input.parse()?,
             var_name: input.parse()?,
             _colon_token: input.parse()?,
             ty: input.parse()?,
@@ -27,6 +29,7 @@ impl Parse for TraitVarField {
 }
 
 struct TraitInput {
+    trait_vis: Visibility,
     _trait_token: Token![trait],
     trait_name: Ident,
     _brace_token: token::Brace,
@@ -38,6 +41,7 @@ impl Parse for TraitInput {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let content;
         Ok(TraitInput {
+            trait_vis: input.parse()?,
             _trait_token: input.parse()?,
             trait_name: input.parse()?,
             _brace_token: braced!(content in input),
@@ -70,6 +74,7 @@ impl Parse for TraitInput {
 #[proc_macro]
 pub fn trait_variable(input: TokenStream) -> TokenStream {
     let TraitInput {
+        trait_vis,
         trait_name,
         trait_variables,
         trait_items,
@@ -94,14 +99,18 @@ pub fn trait_variable(input: TokenStream) -> TokenStream {
                 }
             });
     // 2.2 generate trait variable fields definition for structs later
-    let struct_trait_fields_defs =
-        trait_variables
-            .iter()
-            .map(|TraitVarField { var_name, ty, .. }| {
-                quote! {
-                    #var_name: #ty,
-                }
-            });
+    let struct_trait_fields_defs = trait_variables.iter().map(
+        |TraitVarField {
+             var_vis,
+             var_name,
+             ty,
+             ..
+         }| {
+            quote! {
+                #var_vis #var_name: #ty,
+            }
+        },
+    );
     // 2.3 generate parent trait methods implementation for struct
     let parent_trait_methods_impls =
         trait_variables
@@ -162,25 +171,11 @@ pub fn trait_variable(input: TokenStream) -> TokenStream {
                 $(#[$struct_attr])*
                 $vis struct $struct_name {
                     $($struct_content)*
-                    // NOTE: the following part is from root macro:
-                    // $(
-                    //     // $(#[$field_attr])* // TODO:
-                    //     // $field_vis  // TODO:
-                    //     $trait_field_name: $field_type,// TODO:
-                    // )*
                     #(
                         #struct_trait_fields_defs
                     )*
                 }
                 impl $hidden_parent_trait for $struct_name {
-                //     $( // TODO:
-                //         fn [< _$trait_field_name >](&self) -> &$field_type {
-                //             &self.$trait_field_name
-                //         }
-                //         fn [< _$trait_field_name _mut>](&mut self) -> &mut $field_type {
-                //             &mut self.$trait_field_name
-                //         }
-                //     )*
                     #(
                         #parent_trait_methods_impls
                     )*
@@ -188,14 +183,15 @@ pub fn trait_variable(input: TokenStream) -> TokenStream {
             };
         }
     };
-    // 5. expand code
+    // 5. expand the final code
     let expanded = quote! {
-        trait #parent_trait_name {
+        #trait_vis trait #parent_trait_name {
             #(#parent_trait_methods)*
         }
-        trait #trait_name: #parent_trait_name {
+        #trait_vis trait #trait_name: #parent_trait_name {
             #(#original_trait_items)*
         }
+
         #decl_macro_code
     };
     TokenStream::from(expanded)
