@@ -70,7 +70,7 @@ impl Parse for TraitInput {
     }
 }
 
-/// a functional macro used to generate code for a trait with variable fields
+/// functional macro: used to generate code for a trait with variable fields
 #[proc_macro]
 pub fn trait_variable(input: TokenStream) -> TokenStream {
     let TraitInput {
@@ -197,7 +197,7 @@ pub fn trait_variable(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
-/// This attribute macro is used to tag Rust struct like: `#[trait_var(<trait_name>)]`
+/// attribute macro: used to tag Rust struct like: `#[trait_var(<trait_name>)]`
 #[proc_macro_attribute]
 pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
     // parse attributes

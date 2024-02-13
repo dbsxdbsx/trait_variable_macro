@@ -7,11 +7,9 @@ use crate::common::MyTrait;
 fn test() {
     let s = MyStruct::new(1, "hello".into(), -2, true, 3.14);
     // 1.test struct fields visibility
-
     // 1.1 test self contained fields
     // let a = s.a; // Not visible
     let b = s.b.clone();
-
     // 1.2 test fields generated from trait
     // let x = s.x; // Not visible
     let y = s.y;
