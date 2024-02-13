@@ -1,5 +1,8 @@
 mod common;
-use common::{MyStruct, MyTrait};
+use common::MyStruct;
+
+use crate::common::MyTrait;
+
 #[test]
 fn test() {
     let s = MyStruct::new(1, "hello".into(), -2, true, 3.14);
@@ -7,7 +10,7 @@ fn test() {
 
     // 1.1 test self contained fields
     // let a = s.a; // Not visible
-    let b = s.b.clone(); // visible
+    let b = s.b.clone();
 
     // 1.2 test fields generated from trait
     // let x = s.x; // Not visible

@@ -159,7 +159,7 @@ pub fn trait_variable(input: TokenStream) -> TokenStream {
     // 4. generate the hidden declarative macro for target struct
     let decl_macro_code = quote! {
         #[doc(hidden)]
-        #[macro_export] // TODO: <-- Only if the trait's visibility is `pub`
+        #[macro_export] // it is ok to always export the declarative macro
         macro_rules! #trait_decl_macro_name { // NOTE: the reexpanded macro is used for rust struct only
             (
                 ($hidden_parent_trait:path)
@@ -231,7 +231,7 @@ pub fn trait_var(args: TokenStream, input: TokenStream) -> TokenStream {
     let trait_macro_name = Ident::new(&format!("{}_for_struct", trait_name), trait_name.span());
     let parent_trait_name = Ident::new(&format!("_{}", trait_name), trait_name.span());
     let expanded = quote! {
-        #trait_macro_name! {// TODO: not hard code
+        #trait_macro_name! {
             (#parent_trait_name)
             // (#hidden_trait_path) // TODO: delete?
             #visible struct #struct_name {

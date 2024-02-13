@@ -63,3 +63,35 @@ impl MyTrait for MyStruct {
     }
 }
 //↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑struct definition↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+// use trait_variable_macros::trait_variable;
+// mod test_struct;
+// pub use test_struct::MyStruct;
+
+// trait_variable! {
+//     pub trait MyTrait {  // feel free to add `pub` when needed
+//         // 1.put the variable fields definition at the top of the target trait before any function
+//             x: i32;
+//         pub y: bool;
+//         pub z: f32;
+
+//         // 2.the order of the function definition doesn't matter
+//         fn get_print_field_x(&self) -> &i32{
+//             println!("x: `{}`", self._x());// TODO: make self.<> valid
+//             self._x()
+//             // &self.x
+//         }
+//         fn get_print_field_y(&self) -> &bool;
+//         fn get_print_field_z(&self) -> &f32;
+//         fn change_and_print_z(&mut self, _new_num: f32) {
+//             // self.z = new_num; // TODO
+//             // println!("z: `{}`",self.z);
+//         }
+//     }
+// }
+
+// #[macro_export]
+// macro_rules! my_macro {
+//     () => {
+//         println!("Hello from macro in module a");
+//     };
+// }
