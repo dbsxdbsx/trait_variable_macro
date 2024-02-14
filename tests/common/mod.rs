@@ -9,9 +9,10 @@ trait_variable! {
 
         // 2.the order of the function definition doesn't matter
         fn get_print_field_x(&self) -> &i32{
-            println!("x: `{}`", self._x());// TODO: make self.<> valid
-            self._x()
-            // self.x
+            // println!("x: `{}`", self._x());// ok
+            println!("x: `{}`", sself.x);// TODO: make self.<> valid
+            // self._x() // ok
+            sself.x
         }
         fn get_print_field_y(&self) -> &bool;
         fn get_print_field_z(&self) -> &f32;
